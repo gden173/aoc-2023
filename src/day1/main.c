@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,9 +16,12 @@ const char *num_strs[] = {
   "six", "seven", "eight", "nine"
 };
 
-int num_chars[] = {3, 3, 5, 4, 4, 3, 5, 5, 4};
 
+char *first_char[] = { "on", "tw", "th", "fo", "fi", "si", "se",  "ei", "ni" };
 
+#define NUM_STR_MAP 0x1<<10 
+const char *str_map[NUM_STR_MAP];
+int  dig_map[NUM_STR_MAP];
 
 
 // Read in the files
@@ -30,10 +34,21 @@ FILE * read_file(const char *f) {
   return data_file;
 }
 
+#define TOKEN_SIZE 0x1<<16
+int num[TOKEN_SIZE]; 
 
+int hash(const char s, const char ss) {
+  return s + (ss * 20) - 2000;
+}
 
 
 int main(int argc, char **argv) {
+
+for (int i = 0; i < 9; i++) {
+    int h = hash(num_strs[i][0], num_strs[i][1]);
+    dig_map[h] = i + 1;
+    str_map[h] = num_strs[i];
+}
 
   FILE *data_file;
   const char *f;
@@ -45,80 +60,89 @@ int main(int argc, char **argv) {
     printf("Reading input: %s\n", f);
   }
 
+
   data_file =  read_file(f);
+  char line[BUFFER_SIZE];
+  int offset = 0;
 
-  long value = 0;
-  long first_digit = -1;
-  long last_digit = -1;
-
-  int iter = -1;
-  while (!feof(data_file)) {
-
-    iter++;
-    first_digit = -1;
-    last_digit = -1;
-
-    char line[BUFFER_SIZE];
-    fgets(line, BUFFER_SIZE, data_file);
-
-    int n = strlen(line);
-
+  while (fgets(line, BUFFER_SIZE, data_file) != NULL) {
     int i = 0;
-    while (i < n) {
+    while(i < BUFFER_SIZE) {
+      
       char s = line[i];
-      if (s == ' ' || s == '\n' || s == '\0') {
+      if (s == '\n' || s == '\0' || s == ' ') {
+        num[offset++] = '\0';
         break;
       }
 
-      if (s >= ASCI_ZERO && s <= ASCI_NINE) {
-        if (first_digit < 0) {
-          first_digit = s - ASCI_ZERO;
-        } else {
-          last_digit = s - ASCI_ZERO;
-        }
-        i++;
-      } else {
-        int end = i + 4;
-        if (end >= n-1) {
-          end  = n-1;
-        }
 
-        if ((end - i) < 2) {
-          i++;
-          continue;
-        }
-        int num = str_to_num(line, i, end);
-        if (num > 0) {
-          if (first_digit < 0) {
-            first_digit = num;
-          } else {
-            last_digit = num;
+      if (s >= ASCI_ZERO && s <= ASCI_NINE) {
+        num[offset++] = (int)(s - ASCI_ZERO);
+         i++;
+        continue;
+      }
+
+
+      for (int j = 0; j < 9; j++) {
+        if (s == first_char[j][0] && line[i + 1] == first_char[j][1]) {
+          int h = hash(s, line[i + 1]);
+          const char * v = str_map[hash(s, line[i + 1])];
+
+          int n = strlen(v);
+          int k = 0;
+          int match = 1;
+
+          while ((k + 2) < n) {
+
+
+            if (line[i + 2 + k]== '\n' || line[i + 2 +k] == '\0' || line[i+2+k] == ' ') {
+              num[offset++] = '\0';
+              break;
+            }
+
+            if (line[i + 2 + k] != v[k + 2]) {
+              match = 0;
+              i++;
+              break;
+            }
+          k++;
           }
-          i += num_chars[num-1];
-        } else {
-          i++;
+
+          if (match == 1) {
+            i += n - 1;
+            num[offset++] = dig_map[h];
+            break;
+          }
         }
       }
+      i++;
     }
-
-    if (first_digit < 0) {
-      printf("Did not extract first digit correctly\n");
-      return EXIT_FAILURE;
-    }
-
-    long v = 0;
-    if (last_digit >= 0) {
-      v += (10 * first_digit + last_digit);
-    } else {
-      v += (10 * first_digit + first_digit);
-    }
-    
-    if (feof(data_file)) {
-      continue;
-    }
-    value += v;
   }
-  printf("Value: %ld\n", value);
+
 
   fclose(data_file);
+
+  size_t size = 0;
+  size_t first = 0;
+  size_t second = 0;
+  for (int i = 0; i < offset; i++) {
+    if (num[i] == '\0') {
+      if (second == 0) {
+        size += 10 * first + first;
+        first = 0;
+        continue;
+      } else {
+        size += (10 * first  +  second);
+        first = 0;
+        second = 0;
+        continue;
+      }
+    }
+    if (first == 0) {
+      first = num[i];
+    } else {
+      second = num[i];
+    }
+  }
+ printf("Sum: %zu\n", size);
 }
