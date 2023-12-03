@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUFFER_SIZE 0x2<<12
+#define BUFFER_SIZE 0x2 << 12
 
 // Read in the files
 FILE *read_file(const char *f) {
@@ -12,17 +12,6 @@ FILE *read_file(const char *f) {
     exit(EXIT_FAILURE);
   }
   return data_file;
-}
-
-int char_cmp(char *a, char *b) {
-  int i = 0;
-  while (a[i] != '\0' && b[i] != '\0') {
-    if (a[i] != b[i]) {
-      return 1;
-    }
-    i++;
-  }
-  return 0;
 }
 
 int parse_game_id(char *line) {
@@ -44,27 +33,28 @@ int main(int argc, char **argv) {
   data_file = read_file(f);
   char line[BUFFER_SIZE];
   size_t power_sum = 0;
+  char *col = malloc(1 * sizeof(char));
+  int game_id;
   while (fgets(line, BUFFER_SIZE, data_file) != NULL) {
 
     char *ptr = strtok(line, ":");
-    int game_id;
-
     sscanf(ptr, "Game %d", &game_id);
+
     ptr = strtok(NULL, ",;");
     int vals[3] = {0, 0, 0};
-    char *col = malloc(3 * sizeof(char));
+
     while (ptr != NULL) {
       int val = 0;
-      sscanf(ptr, "%d %5c", &val, col);
-      if (char_cmp(col, "red") == 0) {
+      sscanf(ptr, "%d %1c", &val, col);
+      if (col[0] == 'r') {
         if (val > vals[0]) {
           vals[0] = val;
         }
-      } else if (char_cmp(col, "green") == 0) {
+      } else if (col[0] == 'g') {
         if (val > vals[1]) {
           vals[1] = val;
         }
-      } else if (char_cmp(col, "blue") == 0) {
+      } else if (col[0] == 'b') {
         if (val > vals[2]) {
           vals[2] = val;
         }
@@ -72,9 +62,8 @@ int main(int argc, char **argv) {
       ptr = strtok(NULL, ";,");
     }
 
-    int psum = vals[0] * vals[1] * vals[2];
-    power_sum += (size_t)(psum);
-    printf("Game %d: Power Sum %d\n", game_id, psum);
+    power_sum += (size_t)(vals[0] * vals[1] * vals[2]);
   }
-  printf("Power Sum: %zu\n", power_sum);
+  printf("%zu\n", power_sum);
+  free(col);
 }
