@@ -1,11 +1,8 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 0x2<<12
 
 // Read in the files
 FILE *read_file(const char *f) {
@@ -51,8 +48,7 @@ int main(int argc, char **argv) {
 
   data_file = read_file(f);
   char line[BUFFER_SIZE];
-  int max_cubes[3] = {12, 13, 14};
-  int valid_ids = 0;
+  size_t power_sum = 0;
   while (fgets(line, BUFFER_SIZE, data_file) != NULL) {
     // Parse the game ID
     char *ptr = strtok(line, ":");
@@ -79,15 +75,10 @@ int main(int argc, char **argv) {
       }
       ptr = strtok(NULL, ";,");
     }
-    if (vals[0] > max_cubes[0] || vals[1] > max_cubes[1] ||
-        vals[2] > max_cubes[2]) {
-      printf("Invalid ");
-    } else {
-      valid_ids += game_id;
-      printf("Valid   ");
-    }
-    printf("Game %d: Red: %02d Green: %02d Blue: %02d\n", game_id, vals[0],
-           vals[1], vals[2]);
+
+    int psum = vals[0] * vals[1] * vals[2];
+    power_sum += (size_t)(psum);
+    printf("Game %d: Power Sum %d\n", game_id, psum);
   }
-  printf("Valid IDs: %d\n", valid_ids);
+  printf("Power Sum: %zu\n", power_sum);
 }
