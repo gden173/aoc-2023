@@ -31,11 +31,6 @@ int parse_game_id(char *line) {
   return game_id;
 }
 
-typedef struct {
-  int id;
-  int values[3];
-} game;
-
 int main(int argc, char **argv) {
 
   FILE *data_file;
@@ -50,9 +45,10 @@ int main(int argc, char **argv) {
   char line[BUFFER_SIZE];
   size_t power_sum = 0;
   while (fgets(line, BUFFER_SIZE, data_file) != NULL) {
-    // Parse the game ID
+
     char *ptr = strtok(line, ":");
     int game_id;
+
     sscanf(ptr, "Game %d", &game_id);
     ptr = strtok(NULL, ",;");
     int vals[3] = {0, 0, 0};
